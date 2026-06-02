@@ -12,8 +12,8 @@ Supports **Gemini, Groq, and Ollama** (local). No single vendor lock-in.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                          Gradio UI                              │
-│       streaming chat · trace panel · RAG upload · HITL panel   │
+│                     Gradio UI  (3 tabs)                         │
+│  Scan dashboard · Documents table · Agent chat · HITL panel    │
 └────────────────────────┬────────────────────────────────────────┘
                          │
                 ┌────────▼────────┐
@@ -289,6 +289,50 @@ cp .env.example .env
 # Run
 python main.py
 ```
+
+---
+
+## Dashboard UI
+
+Run `python main.py` and open [http://localhost:7860](http://localhost:7860).
+The app is a **3-tab Gradio interface**:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  🔍 Scan  │  📋 Documents  │  🤖 Ask the agent           │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Tab 1 — Scan (the hero)
+
+The main dashboard. Calls `audit_repository()` directly — **no LLM, no quota usage**.
+Works even if your API key is exhausted.
+
+- **Folder path** — enter any local path, or drag-and-drop your own files
+- **Run Audit** — executes the deterministic pipeline (crawl → extract → score → aggregate)
+- **Hero number** — the big `%` shows what fraction of documents need supervision, colour-coded red/amber/green
+- **Stat cards** — total documents, total size, flagged size, estimated remediation hours
+- **Top reasons chart** — horizontal bar chart of every flag category (stale, no owner, missing sections, etc.)
+- **By document type chart** — grouped bar chart showing total vs flagged per type
+- **Extrapolate toggle** — multiplies displayed counts ×30,000 to project the sample findings onto a full repository; raw numbers remain unchanged
+
+### Tab 2 — Documents (the drill-in)
+
+Per-document table sorted by trust score (worst first).
+
+- **Trust badge** — 🔴 < 0.50 · 🟡 < 0.70 · 🟢 ≥ 0.70
+- **Click any row** — expands a detail panel below with every finding from the staleness, standards, and governance checks, plus the document's embedded metadata (author, classification, etc.) and raw sub-scores
+
+### Tab 3 — Ask the agent
+
+The full multi-agent chat: supervisor → specialist → critic → HITL. Use this when you want the LLM to reason about, summarise, or prioritise the audit findings.
+
+```
+"Audit domain/demo_corpus/files and tell me which issues to fix first"
+"Explain why contract files score so low"
+```
+
+> **Tabs 1 and 2 never call an LLM.** They are safe to use during a demo even with exhausted quotas.
 
 ---
 
@@ -656,7 +700,7 @@ SOTA_AAI/
 │   ├── config.py
 │   └── loader.py                # MCP tool loader (experimental)
 ├── ui/
-│   └── app.py                   # Gradio 6.x streaming UI
+│   └── app.py                   # Gradio 6.x — Tab 1: Scan · Tab 2: Documents · Tab 3: Agent chat
 └── data/
     ├── chroma_db/               # persisted vector stores + SQLite checkpoints
     └── uploads/                 # sandboxed file workspace
